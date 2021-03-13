@@ -1,9 +1,17 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:farmer_market/src/models/user.dart';
+import 'package:farmer_market/src/services/firestore_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:rxdart/subjects.dart';
 
 class AuthBloc {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirestoreService _firestoreService = FirestoreService();
+
+  final _user = BehaviorSubject<AppUser>();
   final _email = BehaviorSubject<String>();
   final _password = BehaviorSubject<String>();
 
@@ -12,6 +20,7 @@ class AuthBloc {
   Stream<String> get password => _password.stream.transform(validatePassword);
   Stream<bool> get isValid =>
       CombineLatestStream.combine2(email, password, (email, password) => true);
+  Stream<AppUser> get user => _user.stream;
 
   // Set Data
   Function(String) get changeEmail => _email.sink.add;
@@ -20,6 +29,7 @@ class AuthBloc {
   dispose() {
     _email.close();
     _password.close();
+    _user.close();
   }
 
   //Transformers
@@ -40,6 +50,50 @@ class AuthBloc {
       sink.addError("Must be 8 characters minimum");
     }
   });
+
+  // Functions
+  signupEmail() async {
+    print("Signing up with email and password");
+
+    try {
+      UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
+              email: _email.value.trim(), password: _password.value.trim());
+      var user =
+          AppUser(userId: userCredential.user.uid, email: _email.value.trim());
+      await _firestoreService.addUser(user);
+      _user.sink.add(user);
+    } catch (error) {
+      print(error);
+    }
+  }
+
+  loginEmail() async {
+    print("Signing in with email and password");
+
+    try {
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+          email: _email.value.trim(), password: _password.value.trim());
+      var user = await _firestoreService.fetchUser(userCredential.user.uid);
+      _user.sink.add(user);
+    } catch (error) {
+      print(error);
+    }
+  }
+
+  //Check if user logged in or not
+  Future<bool> isLoggedIn() async {
+    var firebaseUser = await _auth.currentUser;
+    if (firebaseUser == null) {
+      return false;
+    }
+    var user = await _firestoreService.fetchUser(firebaseUser.uid);
+
+    if (user == null) return false;
+
+    _user.sink.add(user);
+    return true;
+  }
 }
 
 final RegExp regExpEmail = RegExp(

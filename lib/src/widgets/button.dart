@@ -4,18 +4,25 @@ import 'package:farmer_market/src/styles/colors.dart';
 import 'package:farmer_market/src/styles/text.dart';
 import 'package:flutter/material.dart';
 
-class AppButton extends StatelessWidget {
+class AppButton extends StatefulWidget {
   final String buttonText;
   final ButtonType buttonType;
+  final void Function() onPressed;
 
-  AppButton({@required this.buttonText, this.buttonType});
+  AppButton({@required this.buttonText, this.buttonType, this.onPressed});
 
+  @override
+  _AppButtonState createState() => _AppButtonState();
+}
+
+class _AppButtonState extends State<AppButton> {
+  bool pressed = false;
   @override
   Widget build(BuildContext context) {
     TextStyle fontStyle;
     Color buttonColor;
 
-    switch (buttonType) {
+    switch (widget.buttonType) {
       case ButtonType.Straw:
         fontStyle = TextStyles.buttonTextLight;
         buttonColor = AppColors.straw;
@@ -42,23 +49,51 @@ class AppButton extends StatelessWidget {
         break;
     }
 
-    return Padding(
-      padding: BaseStyles.listPadding,
-      child: Container(
-        height: ButtonStyles.buttonHeight,
-        width: MediaQuery.of(context).size.width,
-        decoration: BoxDecoration(
-            color: buttonColor,
-            borderRadius: BorderRadius.circular(BaseStyles.borderRadius),
-            boxShadow: BaseStyles.boxShadow),
-        child: Center(
-            child: Text(
-          buttonText,
-          style: fontStyle,
-        )),
+    return AnimatedContainer(
+      padding: EdgeInsets.only(
+        top: pressed
+            ? BaseStyles.listFieldVertical + BaseStyles.animationOffset
+            : BaseStyles.listFieldVertical,
+        bottom: pressed
+            ? BaseStyles.listFieldVertical - BaseStyles.animationOffset
+            : BaseStyles.listFieldVertical,
+        left: BaseStyles.listFieldHorizontal,
+        right: BaseStyles.listFieldHorizontal,
       ),
+      child: GestureDetector(
+        onTapDown: (details) {
+          setState(() {
+            pressed = !pressed;
+          });
+        },
+        onTapUp: (details) {
+          setState(() {
+            pressed = !pressed;
+          });
+        },
+        onTap: () {
+          if (widget.buttonType != ButtonType.Disabled) {
+            widget.onPressed();
+          }
+        },
+        child: Container(
+          height: ButtonStyles.buttonHeight,
+          width: MediaQuery.of(context).size.width,
+          decoration: BoxDecoration(
+              color: buttonColor,
+              borderRadius: BorderRadius.circular(BaseStyles.borderRadius),
+              boxShadow:
+                  pressed ? BaseStyles.boxShadowPressed : BaseStyles.boxShadow),
+          child: Center(
+              child: Text(
+            widget.buttonText,
+            style: fontStyle,
+          )),
+        ),
+      ),
+      duration: Duration(milliseconds: 20),
     );
   }
 }
 
-enum ButtonType { LightBlue, Straw, LightGray, DarkGray, DarkBlue }
+enum ButtonType { LightBlue, Straw, LightGray, DarkGray, DarkBlue, Disabled }

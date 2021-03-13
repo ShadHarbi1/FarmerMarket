@@ -10,7 +10,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 
-class Login extends StatelessWidget {
+class Login extends StatefulWidget {
+  @override
+  _LoginState createState() => _LoginState();
+}
+
+class _LoginState extends State<Login> {
+  @override
+  void initState() {
+    final authBloc = Provider.of<AuthBloc>(context, listen: false);
+    authBloc.user.listen((user) {
+      if (user != null) Navigator.pushReplacementNamed(context, '/landing');
+    });
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     final authBloc = Provider.of<AuthBloc>(context);
@@ -71,10 +85,17 @@ class Login extends StatelessWidget {
                 onChanged: authBloc.changePassword,
               );
             }),
-        AppButton(
-          buttonText: 'Login',
-          buttonType: ButtonType.LightBlue,
-        ),
+        StreamBuilder<bool>(
+            stream: authBloc.isValid,
+            builder: (context, snapshot) {
+              return AppButton(
+                buttonText: 'Login',
+                buttonType: (snapshot.data == true)
+                    ? ButtonType.LightBlue
+                    : ButtonType.Disabled,
+                onPressed: authBloc.loginEmail,
+              );
+            }),
         SizedBox(
           height: 6.0,
         ),
