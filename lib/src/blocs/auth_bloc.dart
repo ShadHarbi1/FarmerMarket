@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:farmer_market/src/models/user.dart';
 import 'package:farmer_market/src/services/firestore_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:rxdart/subjects.dart';
 
@@ -15,12 +16,15 @@ class AuthBloc {
   final _email = BehaviorSubject<String>();
   final _password = BehaviorSubject<String>();
 
+  final _errorMessage = BehaviorSubject<String>();
+
   // Get Data
   Stream<String> get email => _email.stream.transform(validateEmail);
   Stream<String> get password => _password.stream.transform(validatePassword);
   Stream<bool> get isValid =>
       CombineLatestStream.combine2(email, password, (email, password) => true);
   Stream<AppUser> get user => _user.stream;
+  Stream<String> get errorMessage => _errorMessage.stream;
 
   // Set Data
   Function(String) get changeEmail => _email.sink.add;
@@ -30,6 +34,7 @@ class AuthBloc {
     _email.close();
     _password.close();
     _user.close();
+    _errorMessage.close();
   }
 
   //Transformers
@@ -63,8 +68,9 @@ class AuthBloc {
           AppUser(userId: userCredential.user.uid, email: _email.value.trim());
       await _firestoreService.addUser(user);
       _user.sink.add(user);
-    } catch (error) {
+    } on PlatformException catch (error) {
       print(error);
+      _errorMessage.sink.add(error.message);
     }
   }
 
@@ -76,8 +82,9 @@ class AuthBloc {
           email: _email.value.trim(), password: _password.value.trim());
       var user = await _firestoreService.fetchUser(userCredential.user.uid);
       _user.sink.add(user);
-    } catch (error) {
+    } on PlatformException catch (error) {
       print(error);
+      _errorMessage.sink.add(error.message);
     }
   }
 
@@ -98,6 +105,10 @@ class AuthBloc {
   logout() async {
     await _auth.signOut();
     _user.sink.add(null);
+  }
+
+  clearErrorMessage() {
+    _errorMessage.sink.add('');
   }
 }
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:farmer_market/src/blocs/auth_bloc.dart';
 import 'package:farmer_market/src/styles/base.dart';
 import 'package:farmer_market/src/styles/text.dart';
+import 'package:farmer_market/src/widgets/alerts.dart';
 import 'package:farmer_market/src/widgets/button.dart';
 import 'package:farmer_market/src/widgets/social_button.dart';
 import 'package:farmer_market/src/widgets/textFields.dart';
@@ -13,25 +14,33 @@ import 'package:provider/provider.dart';
 import 'dart:io';
 
 class Login extends StatefulWidget {
-  StreamSubscription _userSubscription;
-
   @override
   _LoginState createState() => _LoginState();
 }
 
 class _LoginState extends State<Login> {
+  StreamSubscription _userSubscription;
+  StreamSubscription _errorMessageSubscription;
   @override
   void initState() {
     final authBloc = Provider.of<AuthBloc>(context, listen: false);
-    widget._userSubscription = authBloc.user.listen((user) {
+    _userSubscription = authBloc.user.listen((user) {
       if (user != null) Navigator.pushReplacementNamed(context, '/landing');
+    });
+
+    _errorMessageSubscription = authBloc.errorMessage.listen((errorMessage) {
+      if (errorMessage != '') {
+        AppAlerts.showErrorDialog(Platform.isIOS, context, errorMessage)
+            .then((_) => authBloc.clearErrorMessage());
+      }
     });
     super.initState();
   }
 
   @override
   void dispose() {
-    widget._userSubscription.cancel();
+    _userSubscription.cancel();
+    _errorMessageSubscription.cancel();
     super.dispose();
   }
 
