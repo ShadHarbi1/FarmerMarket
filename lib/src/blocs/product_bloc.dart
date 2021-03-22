@@ -7,7 +7,7 @@ class ProductBloc {
   final _unitPrice = BehaviorSubject<String>();
   final _availableUnits = BehaviorSubject<String>();
 
-  //Getters
+  //Get
   Stream<String> get productName =>
       _productName.stream.transform(validateProductName);
   Stream<String> get unitType => _unitType.stream;
@@ -15,6 +15,8 @@ class ProductBloc {
       _unitPrice.stream.transform(validateUnitPrice);
   Stream<int> get availableUnits =>
       _availableUnits.stream.transform(validateAvailableUnits);
+  Stream<bool> get isValid => CombineLatestStream.combine4(
+      productName, unitType, unitPrice, availableUnits, (a, b, c, d) => true);
 
   //Set
   Function(String) get changeProductName => _productName.sink.add;
@@ -40,9 +42,9 @@ class ProductBloc {
   });
 
   final validateAvailableUnits = StreamTransformer<String, int>.fromHandlers(
-      handleData: (availabeUnits, sink) {
+      handleData: (availableUnits, sink) {
     try {
-      sink.add(int.parse(availabeUnits));
+      sink.add(int.parse(availableUnits));
     } catch (error) {
       sink.addError('Must be a whole number');
     }
@@ -54,9 +56,9 @@ class ProductBloc {
       sink.add(productName.trim());
     } else {
       if (productName.length < 3) {
-        sink.addError("3 characters minimum");
+        sink.addError('3 Character Minimum');
       } else {
-        sink.addError("100 characters maximum");
+        sink.addError('20 Character Maximum');
       }
     }
   });

@@ -13,7 +13,8 @@ abstract class AppNavbar {
     );
   }
 
-  static SliverAppBar materialNavBar({@required String title, TabBar tabBar}) {
+  static SliverAppBar materialNavBar(
+      {@required String title, TabBar tabBar, bool pinned}) {
     return SliverAppBar(
       title: Text(title, style: TextStyles.navTitleMaterial),
       backgroundColor: AppColors.darkblue,

@@ -3,6 +3,7 @@ import 'package:farmer_market/src/blocs/product_bloc.dart';
 import 'package:farmer_market/src/screens/landing.dart';
 import 'package:farmer_market/src/screens/login.dart';
 import 'package:farmer_market/src/routes.dart';
+import 'package:farmer_market/src/services/firestore_service.dart';
 import 'package:farmer_market/src/styles/colors.dart';
 import 'package:farmer_market/src/styles/text.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -13,6 +14,7 @@ import 'package:provider/provider.dart';
 
 final authBloc = AuthBloc();
 final productBloc = ProductBloc();
+final firestoreService = FirestoreService();
 
 class App extends StatefulWidget {
   @override
@@ -30,6 +32,10 @@ class _AppState extends State<App> {
             create: (context) => authBloc.isLoggedIn(),
             initialData: null,
           ),
+          StreamProvider(
+            create: (context) => firestoreService.fetchUnitTypes(),
+            initialData: null,
+          )
         ],
         child: FutureBuilder(
           future: Firebase.initializeApp(),
